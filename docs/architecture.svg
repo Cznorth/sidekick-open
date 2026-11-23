@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 524" role="img" aria-labelledby="title desc">
+  <title id="title">Sidekick: a small agent with explicit boundaries</title>
+  <desc id="desc">External events move from Worlds through intake to the main agent. The agent has scoped memory and a read-only quick branch; executor work is tracked via a task ledger.</desc>
+  <defs>
+    <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0V28" fill="none" stroke="#183040"/></pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#5de6c4"/></marker>
+  </defs>
+  <rect width="980" height="524" rx="22" fill="#0c1823"/>
+  <rect x="18" y="18" width="944" height="488" rx="14" fill="url(#grid)"/>
+  <g font-family="Arial, sans-serif" fill="#f2f8fc">
+    <text x="54" y="61" fill="#5de6c4" font-size="15" font-weight="bold" letter-spacing="3">SIDEKICK / SYSTEM DESIGN</text>
+    <text x="54" y="100" font-size="30" font-weight="bold">Small core. Explicit boundaries.</text>
+    <g fill="#102636" stroke="#315063" stroke-width="2">
+      <rect x="54" y="144" width="236" height="96" rx="12"/>
+      <rect x="372" y="144" width="236" height="96" rx="12"/>
+      <rect x="690" y="144" width="236" height="96" rx="12" fill="#123e43" stroke="#5de6c4"/>
+      <rect x="54" y="316" width="236" height="96" rx="12"/>
+      <rect x="372" y="316" width="236" height="96" rx="12"/>
+      <rect x="690" y="316" width="236" height="96" rx="12"/>
+    </g>
+    <g fill="none" stroke="#5de6c4" stroke-width="2.5" marker-end="url(#arrow)">
+      <path d="M297 192H361"/><path d="M615 192H679"/>
+      <path d="M808 247V305"/>
+      <path d="M744 247V275H490V305"/>
+      <path d="M680 226H650V295H172V305"/>
+    </g>
+    <g font-size="21" font-weight="bold">
+      <text x="73" y="182">World adapters</text><text x="391" y="182">Intake</text><text x="709" y="182">Main Agent</text>
+      <text x="73" y="354">Task ledger</text><text x="391" y="354">Scoped memory</text><text x="709" y="354">Fast reply</text>
+    </g>
+    <g font-size="15" fill="#b1c8d6">
+      <text x="73" y="210">Events + scoped tools</text><text x="391" y="210">Separate raw data</text><text x="709" y="210">Owns the main session</text>
+      <text x="73" y="382">Runs, waits and review</text><text x="391" y="382">Dream + hybrid recall</text><text x="709" y="382">Read only or defer</text>
+    </g>
+    <text x="54" y="468" fill="#b1c8d6" font-size="15">External content is data. Permissions and state transitions are enforced in code.</text>
+  </g>
+</svg>

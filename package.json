@@ -1,0 +1,7 @@
+{
+  "name": "sidekick-design-core",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": { "demo": "node core/demo.mjs", "test": "node --test core/core.test.mjs" }
+}
