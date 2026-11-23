@@ -2,6 +2,7 @@ import React from 'react';
 import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
 
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' };
+const storyboardFps = 30;
 
 export default function SidekickMotion({ item }) {
   const frame = useCurrentFrame();
@@ -9,23 +10,23 @@ export default function SidekickMotion({ item }) {
   const { accent, background, scenes: sceneJson, font } = item.props;
   const scenes = JSON.parse(sceneJson);
   const time = frame / fps;
-  const found = scenes.findIndex(scene => time < scene.end);
+  const found = scenes.findIndex(scene => time < scene.endFrame / storyboardFps);
   const index = found < 0 ? scenes.length - 1 : found;
   const scene = scenes[index];
-  const local = time - (scenes[index - 1]?.end ?? 0);
+  const local = time - (scenes[index - 1]?.endFrame ?? 0) / storyboardFps;
   const reveal = delay => interpolate(local, [delay, delay + 0.28], [0, 1], clamp);
   const lift = delay => ({ opacity: reveal(delay), transform: `translateY(${(1 - reveal(delay)) * 20}px)` });
-  const progress = interpolate(time, [0, scenes.at(-1).end], [0, 1], clamp);
+  const progress = interpolate(time, [0, scenes.at(-1).endFrame / storyboardFps], [0, 1], clamp);
   const vertical = height > width;
   const panel = {
-    position: 'absolute', left: vertical ? 82 : 112, top: vertical ? 680 : 254,
+    position: 'absolute', left: vertical ? 82 : 112, top: vertical ? 332 : 305,
     width: vertical ? 800 : 650,
   };
   const rows = {
     position: 'absolute', left: vertical ? 84 : 970, top: vertical ? 730 : 270,
     width: vertical ? 800 : 806, display: 'flex', flexDirection: 'column', gap: 22,
   };
-  const title = { ...panel, top: vertical ? 332 : 305, alignItems: 'flex-start' };
+  const title = { ...panel, alignItems: 'flex-start' };
   return (
     <AbsoluteFill style={{ backgroundColor: background, color: '#f2f8fc', fontFamily: font, overflow: 'hidden' }}>
       <svg width={width} height={height} style={{ position: 'absolute', inset: 0 }}>
@@ -40,7 +41,7 @@ export default function SidekickMotion({ item }) {
       <div style={{ position: 'absolute', top: vertical ? 170 : 105, left: vertical ? 84 : 112, letterSpacing: 6, fontSize: 28, fontWeight: 700, color: accent }}>
         SIDEKICK <span style={{ color: '#a9c2cf' }}>/ DESIGN NOTES</span>
       </div>
-      <div style={{ position: 'absolute', top: vertical ? 226 : 170, left: vertical ? 84 : 112, width: width - (vertical ? 224 : 224), height: 4, backgroundColor: '#253e4d' }}>
+      <div style={{ position: 'absolute', top: vertical ? 226 : 170, left: vertical ? 84 : 112, width: width - 224, height: 4, backgroundColor: '#253e4d' }}>
         <div style={{ width: `${progress * 100}%`, height: 4, backgroundColor: accent }} />
       </div>
       <div style={{ ...title, ...lift(0), display: 'flex', flexDirection: 'column', gap: 22 }}>

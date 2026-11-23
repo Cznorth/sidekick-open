@@ -1,34 +1,34 @@
 [
   {
-    "chapter": "THE QUESTION", "title": "我为什么只公开\n私人 Agent 的内核？", "notes": ["设计理念", "实战经验", "能跑的参考代码"], "active": 2,
+    "chapter": "THE QUESTION", "title": "为什么只公开\n私人助手的内核？", "notes": ["设计理念", "实战经验", "能跑的参考代码"], "active": 2, "endFrame": 112,
     "caption": "我为什么不把私人助手整套开源？", "voice": "我为什么不把私人助手整套开源？"
   },
   {
-    "chapter": "THE PERSONAL PART", "title": "最难复用的，\n恰恰是私人部分。", "notes": ["设备各不相同", "权限由本人决定", "个人部署 ≠ 通用产品"], "active": 2,
+    "chapter": "THE PERSONAL PART", "title": "最难复用的，\n恰恰是私人部分。", "notes": ["设备各不相同", "权限由本人决定", "个人部署 ≠ 通用产品"], "active": 2, "endFrame": 237,
     "caption": "设备、权限和工作流都因人而异。", "voice": "设备、权限和工作流，都因人而异。"
   },
   {
-    "chapter": "01 / WORLDS", "title": "把接入放进\n可替换的 World。", "notes": ["设备与工具", "事件与权限边界", "小内核"], "active": 1,
+    "chapter": "01 / WORLDS", "title": "把接入放进\n可替换的 World。", "notes": ["设备与工具", "事件与权限边界", "小内核"], "active": 1, "endFrame": 349,
     "caption": "工具接进来，权限不跟着放开。", "voice": "工具接进来，权限不跟着放开。"
   },
   {
-    "chapter": "02 / FAST REPLY", "title": "主线在忙，\n追问不用排队。", "notes": ["复用稳定前缀", "快答分支：只读", "超时或需要写入：交回主线"], "active": 1,
+    "chapter": "02 / FAST REPLY", "title": "主线在忙，\n追问不用排队。", "notes": ["复用稳定前缀", "快答分支：只读", "超时或需要写入：交回主线"], "active": 1, "endFrame": 457,
     "caption": "快答借上下文，不借写权限。", "voice": "快答借上下文，不借写权限。"
   },
   {
-    "chapter": "03 / MEMORY", "title": "大窗口，\n不是记忆。", "notes": ["稳定的热上下文", "夜间归档整理", "关键词 + 语义召回"], "active": 2,
+    "chapter": "03 / MEMORY", "title": "大窗口，\n不是记忆。", "notes": ["稳定的热上下文", "夜间归档整理", "关键词 + 语义召回"], "active": 2, "endFrame": 576,
     "caption": "夜间整理，白天按权限混合召回。", "voice": "夜间整理，白天按权限混合召回。"
   },
   {
-    "chapter": "04 / TASK LEDGER", "title": "交付不等于\n已经完成。", "notes": ["限额：暂停，能恢复", "交付：等待验收", "验收：才算完成"], "active": 2,
+    "chapter": "04 / TASK LEDGER", "title": "交付不等于\n已经完成。", "notes": ["限额：暂停，能恢复", "交付：等待验收", "验收：才算完成"], "active": 2, "endFrame": 688,
     "caption": "结果由账本跟踪，不由模型猜。", "voice": "结果由账本跟踪，不由模型猜。"
   },
   {
-    "chapter": "05 / SOURCE LEVEL", "title": "内核够小，\n才改得动。", "notes": ["强 Coding 模型提补丁", "你来审阅、测试和授权", "持续改成自己的样子"], "active": 0,
+    "chapter": "05 / SOURCE LEVEL", "title": "内核够小，\n才改得动。", "notes": ["强 Coding 模型提补丁", "你来审阅、测试和授权", "持续改成自己的样子"], "active": 0, "endFrame": 811,
     "caption": "用强编程模型，持续改自己的源码。", "voice": "用强编程模型，持续改自己的源码。"
   },
   {
-    "chapter": "SIDEKICK / DESIGN CORE", "title": "公开方法，\n保留私人数据。", "notes": ["README / 设计与踩坑", "core / 可运行示例", "npm run demo"], "active": 2,
+    "chapter": "SIDEKICK / DESIGN CORE", "title": "公开方法，\n保留私人数据。", "notes": ["README / 设计与踩坑", "core / 可运行示例", "npm run demo"], "active": 2, "endFrame": 963,
     "caption": "设计、经验和核心代码，见仓库。", "voice": "设计、经验和核心代码，见仓库。"
   }
 ]
