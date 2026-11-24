@@ -1,50 +1,60 @@
-# Sidekick 设计手册
+# Sidekick design notes
 
-## 最小的稳定内核，最大的可变边界
+English · [简体中文](design.zh-CN.md)
 
-最有价值的不是让 Agent 多说，而是让它能以正确权限看见变化、记得决策、把做不完的事交出去，并且在用户问起时说清楚卡在哪。模型负责判断与表达；代码负责鉴权、状态迁移、幂等和权限约束。保留“个人用强 Coding 模型改源码”的能力，不代表运行中的 Agent 有改配置、装工具或发布的权限。建议从有回归场景的改动开始：用 Coding 模型提补丁，让人审变化，高风险动作仍单独授权。
+## The smallest stable core, the widest changeable edge
 
-## World：事件与工具分开
+The valuable part is not making the agent talk more. It is letting the agent see changes with the right permissions, remember decisions, hand off work it cannot finish, and explain where things are stuck when the user asks. The model judges and phrases; code enforces authentication, state transitions, idempotency, and permissions. Keeping "the owner changes the source with a strong coding model" does not mean the running agent may change its own configuration, install tools, or ship releases. Start with changes that have a regression scenario: let a coding model propose the patch, let a human review the change, and authorize high-risk actions separately.
 
-World 是一块可替换的能力边界。入口先鉴权、限大小、验证类型，再把条目变成带稳定 ID、来源及唤醒策略的事件；实时状态用可查询快照，不把每次变化都塞进模型。事件正文是第三方数据，不是模型指令；工具另走权限校验。将来源标记与模型输入分隔有助于防混淆，但并不等于防注入，执行前仍须在代码中校验工具权限和参数。
+## Worlds: events and tools are separate
 
-`core/world.mjs` 只做路由、拷贝数据和信任标记。适配器先验证原始载荷和来源；`accept` 负责原子去重与入队，`demo` 用进程内集合而非可靠队列。真正接设备时，分别复测亮屏、熄屏和断网重连：前台服务仍可能被系统冻结，连接对象存在不代表字节能及时送达。恢复点应重建连接、按游标补发并去重，不能靠重启 UI 才恢复。
+A World is a replaceable capability boundary. Its ingress authenticates, limits size, and validates types first, then turns each item into an event with a stable ID, a source, and a wake policy. Live state goes into a queryable snapshot instead of pushing every change into the model. Event bodies are third-party data, not model instructions; tools go through their own permission checks. Separating source tags from model input helps against confusion but is not injection-proof: tool permissions and arguments must still be validated in code before execution.
 
-## 百万 token 的上限不是日常提示词
+`core/world.mjs` only routes, copies data, and adds the trust tag. Adapters validate the raw payload and source first; `accept` does atomic deduplication and enqueueing, and the demo uses an in-process set rather than a reliable queue. When you connect real devices, retest screen-on, screen-off, and network reconnect separately: a foreground service can still be frozen by the OS, and an existing connection object does not mean bytes arrive in time. Recovery should rebuild the connection, replay from a cursor, and deduplicate; it must not depend on restarting the UI.
 
-把 1M token 视作长窗口模型的设计上限，而不是必须常驻的体量、缓存命中保证或 Sidekick 跑分。稳定系统段、工具声明和历史顺序，追加新消息而不是反复重写前缀；让更新频繁的原始事件留在收发室。复用要看同一端点、模型和实际序列化字节；切模型、工具 schema 变动、提供商淘汰缓存都可能冷启动。不要把定时 ping 当作通用的保活方案：是否启用应由供应商策略、真实 cached input、首字延迟、成本和整段回退决定。软水位先产出交接笔记，硬水位换会话；持久记忆不依赖缓存生命周期。
+## A million tokens is a ceiling, not the everyday prompt
 
-## Nightly Dream 与混合召回
+Treat 1M tokens as the design ceiling of long-context models, not a size that must stay resident, a cache-hit guarantee, or a Sidekick benchmark. Keep the system segment, tool declarations, and history order stable; append new messages instead of rewriting the prefix; leave high-frequency raw events in intake. Reuse depends on the same endpoint, model, and actual serialized bytes; switching models, changing a tool schema, or a provider evicting its cache can all cause a cold start. Do not treat a periodic ping as a general keep-alive: whether to use one depends on the provider's policy, real cached input, time to first token, cost, and full fallback. At a soft watermark, write a handoff note; at a hard watermark, start a new session. Durable memory must not depend on cache lifetime.
 
-原系统把夜间整理当作维护任务：先完整归档并建立可查引用，再合并重复、更新过时信息；长期事实、规则与未了事项要保留，不能从历史文本发明新规则。整理会和白天的新记忆、任务变更竞争，所以提交时同时比对记忆版本和任务状态；冲突时重读重做，不能把最新内容覆盖掉。`core/memory.mjs` 的 `consolidate` 以可注入存储示范归档后做 CAS；生产存储必须在一个原子操作里比对两个版本，归档失败不允许写入。
+## Nightly Dream and hybrid recall
 
-召回先授权再查询：词法搜索善于抓精确术语和编号，语义搜索可找不同说法的同一主题。对两个授权后的候选列表分别排名，按同一稳定引用做倒数排名融合，再设条数和注入预算；语义后端不可用时可以只交词法结果。示例只实现融合，不生成向量或建立索引。后过滤是兜底，不是权限边界；未授权文档不应交给索引查询或外部向量服务。
+The original system treats nightly consolidation as a maintenance job: first archive everything with a queryable reference, then merge duplicates and update stale information. Long-term facts, rules, and open items must be kept, and no new rules may be invented from historical text. Consolidation races with new daytime memories and task changes, so the commit compares both the memory revision and the task state; on conflict, reread and redo rather than overwrite the latest content. `consolidate` in `core/memory.mjs` demonstrates archive-then-CAS with an injectable store; a production store must compare both revisions in one atomic operation, and no write is allowed if archiving fails.
 
-## 忙时 `fastReply`：热分支只借上下文，不借写权
+Recall authorizes first, then queries. Lexical search is good at exact terms and identifiers; semantic search finds the same topic phrased differently. Rank the two authorized candidate lists separately, fuse them with reciprocal rank fusion on the same stable reference, then cap the count and the injection budget. If the semantic backend is unavailable, lexical results alone are fine. The example only implements fusion; it does not create vectors or build an index. Post-filtering is a safety net, not a permission boundary: unauthorized documents should never reach the index query or an external vector service.
 
-主循环已在跑时，符合条件的纯提问先保留，不立即塞入主队列。原系统从主会话下一次请求的快照起步，保持工具声明顺序，用占位回执闭合在途工具调用，再加上问题；若走另一模型，可用裁剪后的上下文，但不要承诺主模型前缀命中。只让分支执行已声明且真正只读的工具，发送动作由宿主接住而不是作为真实工具调用。需要写入、遇错、超时或主循环恢复空闲时，分支交回原消息；有答案再由聊天入口发出，主线以后看到带标记的记录，但不会同时回答一次。
+## `fastReply` while busy: the hot branch borrows context, not write access
 
-`core/fast-reply.mjs` 展示复制前缀、声明与 handler 分离、只读执行、轮数上限和取消。不实现提供商序列化、工具回执协议或消息队列；这些属于宿主。接线时要串行仲裁消息归属、只允许一个出口，以及让工具尊重取消。工具标签必须由可信代码声明；只读 handler 依然应使用物理上只读的访问能力，取消也不能强行停止不配合的外部请求。
+When the main loop is already running, an eligible pure question is held instead of being pushed straight into the main queue. The original system starts from a snapshot of the main session's next request, keeps tool declaration order, closes in-flight tool calls with placeholder receipts, and appends the question. If the branch uses a different model, it can use a trimmed context, but do not promise a prefix hit on the main model. The branch may only run tools that are declared and truly read-only; the send action is caught by the host instead of executing as a real tool call. When a write is needed, an error happens, time runs out, or the main loop becomes idle, the branch hands the original message back. If it does answer, the chat front door sends the answer; the main loop later sees a tagged record but does not answer the same question again.
 
-## 任务账本：执行完成和验收完成是两回事
+`core/fast-reply.mjs` shows prefix copying, separation of declarations from handlers, read-only execution, a round limit, and cancellation. It does not implement provider serialization, the tool-receipt protocol, or the message queue; those belong to the host. When wiring it in, arbitrate message ownership serially, allow exactly one outlet, and make tools honor cancellation. Tool labels must be declared by trusted code; read-only handlers should still use physically read-only access, and cancellation cannot forcibly stop an external request that does not cooperate.
 
-原系统由聊天中枢持有任务与运行，不靠秘书重述来保存状态。执行器的结果按原文交回；需要用户拍板就记录请求和选项，超时由固定逻辑通知而不是等模型总结。限额暂停是 `waiting`，不要按失败或完成收口；进程重启应从账本和运行记录对账，旧运行不能盖掉新运行或后来手动改过的状态。
+## Task ledger: execution finished is not acceptance finished
 
-`core/tasks.mjs` 用更小的状态机明确这一点：`pending → dispatched → running`；提问或限额进入 `waiting`，可恢复；交付进入 `review`，验收才是 `done`。重新派单增加 attempt，事件必须按本次 attempt 内的连续 sequence 应用。示例不是原库的表结构，也不提供持久化；生产接线应在事务中写事件、迁移状态，并把通知发到可重试的 outbox。传输乱序时先缓冲或补读缺失事件，不把拒绝的事件当作已消费；验收事件只允许实际授权的审核者产生。
+In the original system, the chat hub owns tasks and runs; state is not preserved by the secretary retelling it. Executor results are returned verbatim. When the user must decide, the request and its options are recorded, and timeouts are announced by fixed logic rather than waiting for a model summary. A quota pause is `waiting`; it must not be closed as failed or done. After a process restart, reconcile from the ledger and run records; an old run must not overwrite a newer run or a state that was later changed by hand.
 
-## 记忆分片与多 Bot：隔离数据，而不是开群聊
+`core/tasks.mjs` makes this explicit with a smaller state machine: `pending → dispatched → running`; a question or a quota limit enters `waiting`, which is resumable; delivery enters `review`; only acceptance makes it `done`. Redispatch increments `attempt`, and events must be applied in contiguous `sequence` order within that attempt. The example is not the original table schema and provides no persistence; production wiring should write events and transitions in one transaction and send notifications through a retryable outbox. When transport reorders events, buffer or re-read the missing ones; do not treat a rejected event as consumed. Acceptance events may only come from an actually authorized reviewer.
 
-收发室消化高频、敏感的原始输入，秘书只见有用摘要和可授权查询的档案；任务执行器只拿完成任务所需的简报。角色分开持有会话、可写记忆和权限，档案可以选择性只读共享。这样高频采集不会重排秘书的热上下文，也不会让每个成员自动接触所有内容。进程拆开并不等于安全隔离；需要独立凭据、强制 ACL、审计和显式数据流向。长期运营先解决访问控制与可追溯性，角色数量其次。
+## Memory shards and multiple bots: isolate data, do not open a group chat
 
-## 与 OpenClaw 对比：选择分发方式，不做能力稻草人
+Intake digests high-frequency, sensitive raw input; the secretary sees only useful summaries and dossiers it is authorized to query; task executors get only the brief needed for the task. Roles hold their own sessions, writable memory, and permissions; dossiers can be shared read-only where chosen. This way high-frequency collection does not reshuffle the secretary's hot context, and not every member automatically sees everything. Separate processes are not security isolation; that needs separate credentials, enforced ACLs, auditing, and explicit data flows. For long-term operation, access control and traceability come before the number of roles.
 
-[OpenClaw 的架构](https://docs.openclaw.ai/concepts/architecture)以 Gateway 接聊天面、客户端和设备节点；[多 Agent 文档](https://docs.openclaw.ai/concepts/multi-agent)描述独立 workspace、会话和路由，[记忆文档](https://docs.openclaw.ai/concepts/memory)也描述检索与整理。它并非没有多 Agent、设备或记忆能力。Sidekick 取舍不同：优先把每个人的设备、授权和工作交接建模成可改源码的 World，公开可移植机制，不把个人部署当标准产品发出去。希望快速接入通用生态可优先看 Gateway 路线；愿意自己维护并深入系统边界，可借鉴这里的模式。
+## Model choice
 
-## 踩坑录
+The secretary is the role that talks to the user, reads summaries, and decides what to dispatch. In the author's experience it currently works best on Gemini: compared with Claude Opus 5.5 it generalizes clearly better to situations the prompt never described, and it proactively does things instead of asking for permission twice. He considers it the best model for a personal agent right now. This is one person's daily-use impression, not a benchmark, and it will change as models change.
 
-- **大窗口和记忆不是一回事。** 整段上下文很贵且有失效条件。把长期事实写进可审查、可召回的存储，并限制注入。
-- **别把所有变化当通知。** 推送阈值与存储分开，普通事件随下一轮补上，只有需要响应的事件才叫醒主循环。
-- **快答不是第二条主线。** 在手上的工具调用还没完成时，不要编造结果，也不要让分支执行写操作来“赶进度”。
-- **传话别依赖模型复述。** 保存原始指令、执行回执和决定；摘要是索引，不是事实来源。
-- **队列显示为空不代表工作做完。** 崩溃后要按任务与运行对账；重试、限额、验收分别建模，通知不等于事务提交。
-- **示例数据从头写。** 用合成任务和独立参考实现解释设计，不用截图涂抹来代替数据清理，也不把真人聊天历史当夹具。
+The other roles are chosen on cost and stability: intake runs on a cheap model with its own fallback chain, separate from the secretary so the two do not break each other's prompt cache; coding work goes to coding agents (Claude Code, Codex, OpenCode, Pi and similar) acting as executors. Every provider sits behind an ordered fallback chain, and a quota error switches to the next provider instead of waiting hours on `Retry-After`. Keep the choice in configuration, not in code.
+
+## Compared with OpenClaw: choose a distribution model, not a straw man
+
+[OpenClaw's architecture](https://docs.openclaw.ai/concepts/architecture) uses a Gateway to connect chat surfaces, clients, and device nodes; its [multi-agent docs](https://docs.openclaw.ai/concepts/multi-agent) describe separate workspaces, sessions, and routing, and its [memory docs](https://docs.openclaw.ai/concepts/memory) describe retrieval and consolidation. It is not missing multi-agent, device, or memory features. Sidekick makes a different trade-off: it models each person's devices, permissions, and work handoffs as Worlds whose source you can change, publishes portable mechanisms, and does not ship a personal deployment as a standard product. If you want to plug into a general ecosystem quickly, look at the Gateway route first; if you are willing to maintain your own and go deep into system boundaries, borrow the patterns here.
+
+## Pitfalls in brief
+
+The full list is in [lessons.md](lessons.md).
+
+- **A large window is not memory.** A full context is expensive and has failure conditions. Write long-term facts into reviewable, recallable storage and cap what gets injected.
+- **Not every change is a notification.** Keep the push threshold separate from storage; ordinary events ride along with the next batch, and only events that need a response wake the main loop.
+- **Fast reply is not a second main line.** While a tool call is still in flight, do not invent its result, and do not let the branch run writes to "catch up".
+- **Do not rely on the model to retell a message.** Store original instructions, execution receipts, and decisions; a summary is an index, not a source of truth.
+- **An empty queue does not mean the work is done.** After a crash, reconcile tasks against runs; model retries, quota limits, and acceptance separately; a notification is not a transaction commit.
+- **Write sample data from scratch.** Explain the design with synthetic tasks and an independent reference implementation; do not substitute redacted screenshots for data cleanup, and never use real chat history as fixtures.

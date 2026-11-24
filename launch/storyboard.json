@@ -29,6 +29,6 @@
   },
   {
     "chapter": "SIDEKICK / DESIGN CORE", "title": "公开方法，\n保留私人数据。", "notes": ["README / 设计与踩坑", "core / 可运行示例", "npm run demo"], "active": 2, "endFrame": 963,
-    "caption": "设计、经验和核心代码，见仓库。", "voice": "设计、经验和核心代码，见仓库。"
+    "caption": "github.com/Cznorth/sidekick-open", "voice": "设计、经验和核心代码，见仓库。"
   }
 ]

@@ -1,31 +1,64 @@
-# Sidekick：能被你改写的 Personal Agent
+# Sidekick: a personal agent you can rewrite
 
-[English](README.en.md) · [设计手册](docs/design.md) · [发布文案](launch/copy.md)
+English · [简体中文](README.zh-CN.md) · [Design notes](docs/design.md) · [Lessons](docs/lessons.md) · [Deploy skill](skills/deploy-sidekick/SKILL.md) · [Launch copy](launch/copy.md)
 
-**入口做统一，权限由个人决定，代码可以一直改。** Sidekick 提供的是一套个人 Agent 的设计经验和能跑的核心参考代码，不是另一个全家桶，也不是原部署的安装包。
+**One front door. Permissions on your terms. Source you can keep changing.** Sidekick is a personal agent built as extension packages on the open-source agent runtime [Cortico](https://github.com/Pal-AI-Lab/Cortico). This repository shares what is portable: the design, the pitfalls we hit, a runnable reference core, and an agent-facing skill that walks you through building your own. It is not an installer for the original deployment.
 
-通用助手擅长提供开箱即用的体验。但真正贴身的工作常跨设备、系统权限和私人上下文；平台不能默认获得这些权限，也很难替每个人定制到底。我们的取舍是让事件循环尽可能小，把数据接入和工具放到可替换的 World 里，再用强 Coding 模型维护属于自己的那一层源码。能改源码不等于允许模型随意上生产：变更仍要可审阅、可测试、可回退。
+General-purpose assistants are useful out of the box. Personal workflows, however, span devices, OS permissions, and private context. A platform cannot assume broad access or build the last mile for every user. Sidekick's bet is a small agent loop, replaceable Worlds for data and tools, and source-level customization with a capable coding model. Reviewable changes, tests, and rollback still matter; self-evolution is not an excuse for unreviewed deployment.
 
-![架构：World 分发带信任标记的事件，主 Agent 结合记忆工作，快答走只读支路，执行器通过任务账本回报](docs/architecture.svg)
+![Worlds route external events, the main Agent owns its context, quick answers run read-only, and executors report through a task ledger](docs/architecture.svg)
 
-| 断点 | 设计选择 |
+| Problem | Design |
 | --- | --- |
-| 一接新设备就要改 Agent | World 把输入变成带来源的事件，把工具权限放在适配器边界 |
-| 主循环忙时，追问也排队 | `fastReply` 尝试复用主会话请求前缀，限时、只读；答不了就还给主循环 |
-| 长会话被噪声淹没 | 热上下文、夜间整理、关键词与语义混排、按角色隔离记忆分片 |
-| 派单之后，聊天没动静就像烂尾 | 任务账本区分等待、待验收和完成；执行器结束不等于用户验收 |
+| Each new integration changes the agent | Worlds package events and scoped tools behind explicit boundaries |
+| Raw device data floods the main conversation | A cheap intake model filters raw data; only what matters reaches the secretary |
+| Questions stall behind long turns | A bounded, read-only `fastReply` branch can reuse the main request prefix or hand back to the main loop |
+| A large window turns into a noisy archive | Keep a hot prefix and role-scoped memory; consolidate at night and combine lexical with semantic retrieval |
+| Dispatched tasks disappear into chat | Track waiting, review, and completion separately in a task ledger |
+| "Add a feature" requires the owner to code | The secretary relays the user's own words to a coding executor that edits, tests, commits, and can roll back |
 
-## 跑一遍
+## Layering
 
-需要 Node.js 22 或以上。无需安装依赖、联网或填模型密钥：
+```
+raw device data (phone, mail, computer, health)
+   │  intake: a cheap model filters, merges, forwards only what matters
+   ▼
+secretary: the main bot, the only one that talks to the user, dispatches work
+   │  task brief + the user's original words
+   ▼
+coding executors (Claude Code, Codex, OpenCode, Pi, ...): edit, test, commit, deploy
+```
+
+**Model choice (author's experience, not a benchmark).** The secretary currently runs on Gemini. In the author's day-to-day use, Gemini generalizes clearly better than Claude Opus 5.5 for this role and proactively does things without being asked twice; he considers it the best model for a personal agent right now. Intake runs on cheaper models with a fallback chain; heavy code changes go to coding agents as executors. Your mileage will differ: keep the provider swappable.
+
+## Run the reference core
+
+Use Node.js 22 or later. No dependencies, network access, or model keys are needed:
 
 ```sh
 npm run demo
 npm test
 ```
 
-演示使用合成的工作坊任务：事件去重 → 执行器遇到限额暂停 → 恢复并提交成果 → 验收 → 忙时只读查询 → 归档整理。`core/` 是依据内部设计重新编写的参考实现：**没有原适配器、部署配置、私人数据、模型调用或持久化服务**。原系统行为与示例取舍的差别见[设计手册](docs/design.md)。
+The synthetic workshop example routes a deduplicated event, pauses and resumes a task after a quota limit, reviews the result, answers a read-only question, and archives old notes before consolidation. The reference core re-expresses the design without copying deployment code. It does not include device adapters, real data, a model gateway, or durable storage. The [design notes](docs/design.md) distinguish the original system from the example.
 
-## 审阅状态
+## Build your own
 
-这是待审稿。未经维护者确认不公开；[发布审阅说明](docs/release-review.md)列出了许可和内容边界。
+Hand [`skills/deploy-sidekick/SKILL.md`](skills/deploy-sidekick/SKILL.md) to a coding agent (Claude Code picks it up as a skill; Codex and others find it through [`AGENTS.md`](AGENTS.md)). It guides you from zero to your own Sidekick-style agent on Cortico: what already exists, what you must build, the order to build it in, verification, and safety rules. Read [docs/lessons.md](docs/lessons.md) before you wire real devices.
+
+## What is in this repository
+
+| Path | Content |
+| --- | --- |
+| `docs/design.md` / `docs/design.zh-CN.md` | Design notes (English / Chinese) |
+| `docs/lessons.md` / `docs/lessons.zh-CN.md` | Pitfalls and habits, each as problem → what happened → rule |
+| `docs/architecture.svg` | Architecture diagram |
+| `core/` | Dependency-free reference core and tests |
+| `skills/deploy-sidekick/` | Agent-facing deploy/install skill |
+| `launch/` | Video storyboard, motion source and launch copy (synthetic material only) |
+
+Not included: the private device adapters, Android companion app, Windows agent, prompts, deployment config, or any personal data.
+
+## Contributing and license
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/release-review.md](docs/release-review.md). Licensed under the [MIT License](LICENSE).

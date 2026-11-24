@@ -1,5 +1,29 @@
-# 发布审阅
+# Release review
 
-这批文件用于私有审阅。公开的是设计、经验，以及重新编写的参考实现；不是原项目的部署脚本、连接器、提示词、聊天记录或数据库导出。示例文案均为虚构素材。原有程序许可不随本稿变更；确认权利与本稿的公开许可后，再添加相应许可文件并切换可见性。在那之前不要把本稿对外称为已经按某个许可开源。
+English · [简体中文](release-review.zh-CN.md)
 
-公开前阅读 Git 实际提交内容和历史，而不是仅检查工作区。重点看个人身份与联系方式、内部地址、凭据、真实记忆、附件和提交者元数据。任何素材更新都应重新检查。视频与社媒文案使用公开版架构和合成场景，不录屏私人实例；将平台公开链接补齐后再发，不能发私有仓链接或让观众请求访问。
+This repository is licensed under the [MIT License](../LICENSE), `Copyright (c) 2026 Cznorth`. The license covers the files in this repository only: the design notes, lessons, the deploy skill, the re-written reference core, and the launch material. It does not cover, and this repository does not contain, the original project's deployment scripts, connectors, prompts, chat logs, database exports, Android app, or Windows agent. All sample copy and scenarios are synthetic.
+
+The repository is currently private on GitHub. Changing its visibility is the maintainer's decision and is not part of any automated change.
+
+## Before every push
+
+Review what Git will actually publish (the diff and the history), not just the working tree. In particular check for:
+
+- personal names, real names, emails, phone numbers, chat-app account numbers;
+- IP addresses, internal hostnames and domains, server paths, ports tied to a real deployment;
+- credentials, tokens, keys, cookies, OAuth files;
+- real memories, chat history, attachments, screenshots, health or message content;
+- committer metadata (use a neutral author for this repository).
+
+A quick mechanical pass before committing:
+
+```sh
+git diff --cached | grep -nE '@|https?://|[0-9]{1,3}(\.[0-9]{1,3}){3}'
+```
+
+Every URL that remains should be a public project or documentation link. Re-run the check whenever launch material changes.
+
+## Videos and posts
+
+Videos and social posts use the public architecture and synthetic scenes; never screen-record a private instance. The repository URL `https://github.com/Cznorth/sidekick-open` may be shown on screen and in descriptions.

@@ -1,5 +1,8 @@
 {
   "name": "sidekick-design-core",
+  "version": "0.1.0",
+  "description": "Design notes, lessons, a deploy skill and a runnable reference core for a Sidekick-style personal agent on Cortico.",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "engines": { "node": ">=22" },
