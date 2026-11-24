@@ -1,6 +1,6 @@
 # Sidekick：能被你改写的 Personal Agent
 
-[English](README.md) · 简体中文 · [设计手册](docs/design.zh-CN.md) · [踩坑与习惯](docs/lessons.zh-CN.md) · [部署 Skill](skills/deploy-sidekick/SKILL.md) · [发布文案](launch/copy.md)
+[English](README.md) · 简体中文 · [设计手册](docs/design.zh-CN.md) · [踩坑与习惯](docs/lessons.zh-CN.md) · [搭建 Skill](skills/sidekick-bootstrap/SKILL.zh-CN.md) · [发布文案](launch/copy.md)
 
 **入口做统一，权限由个人决定，代码可以一直改。** Sidekick 是以扩展包形式搭在开源 Agent 运行时 [Cortico](https://github.com/Pal-AI-Lab/Cortico) 上的个人 Agent。本仓库公开能迁移的部分：设计、踩过的坑、能跑的核心参考代码，以及一份交给 Coding Agent 用的部署 Skill，帮你搭自己的那一套。它不是原部署的安装包。
 
@@ -29,7 +29,7 @@
 Coding 执行器（Claude Code、Codex、OpenCode、Pi 等）：改代码、测试、提交、部署
 ```
 
-**模型选择（作者个人经验，不是评测结论）。** 秘书现在用 Gemini。作者日常使用下来，Gemini 在这个角色上的泛化能力明显好于 Claude Opus 5.5，而且会主动把事办了，不用催第二遍；他认为它是目前做个人 Agent 最合适的模型。收发室用更便宜的模型并配回退链；重的代码活交给 Coding Agent 当执行器。每个人的体验会不同，provider 要保持可替换。
+**模型选择（作者个人经验，不是评测结论）。** 秘书现在用 1M 上下文的 Gemini。作者日常使用下来，Gemini 在这个角色上的泛化能力明显好于 Claude Opus 5.5，而且会主动把事办了，不用催第二遍；他认为它是目前做个人 Agent 最合适的模型。收发室用更便宜的模型并配回退链；重的代码活交给 Coding Agent 当执行器。每个人的体验会不同，provider 要保持可替换。
 
 ## 跑一遍
 
@@ -44,7 +44,7 @@ npm test
 
 ## 搭你自己的
 
-把 [`skills/deploy-sidekick/SKILL.md`](skills/deploy-sidekick/SKILL.md) 交给一个 Coding Agent（Claude Code 会当作 Skill 加载；Codex 等经 [`AGENTS.md`](AGENTS.md) 找到它）。它会带你从零在 Cortico 上搭出自己的 Sidekick 式 Agent：哪些已经有、哪些要自己写、按什么顺序写、怎么验收、有哪些安全规矩。接真设备之前先读 [踩坑与习惯](docs/lessons.zh-CN.md)。
+把 [`skills/sidekick-bootstrap/SKILL.md`](skills/sidekick-bootstrap/SKILL.md) 交给一个 Coding Agent（Claude Code 会当作 Skill 加载；Codex 等经 [`AGENTS.md`](AGENTS.md) 找到它）。它会带你从零在 Cortico 上搭出自己的 Sidekick 式 Agent：哪些已经有、哪些要自己写、按什么顺序写、怎么验收、有哪些安全规矩。也可以直接把 [`PROMPT.md`](skills/sidekick-bootstrap/PROMPT.md) 里的引导 Prompt 粘给你自己的 Agent。接真设备之前先读 [踩坑与习惯](docs/lessons.zh-CN.md)。
 
 ## 仓库里有什么
 
@@ -54,7 +54,7 @@ npm test
 | `docs/lessons.md` / `docs/lessons.zh-CN.md` | 踩坑与习惯，每条按「问题 → 经过 → 规矩」写 |
 | `docs/architecture.svg` | 架构图 |
 | `core/` | 无依赖的参考核心与测试 |
-| `skills/deploy-sidekick/` | 给 Agent 用的部署 Skill |
+| `skills/sidekick-bootstrap/` | 给 Agent 用的搭建 Skill（`SKILL.md`、中文 `SKILL.zh-CN.md`）和引导 Prompt（`PROMPT.md`） |
 | `launch/` | 视频分镜、动效源码与发布文案（全是合成素材） |
 
 不包含：私有的设备适配器、安卓伴生 App、Windows 端采集程序、提示词、部署配置和任何个人数据。

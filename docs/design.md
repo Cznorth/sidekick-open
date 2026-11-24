@@ -40,7 +40,7 @@ Intake digests high-frequency, sensitive raw input; the secretary sees only usef
 
 ## Model choice
 
-The secretary is the role that talks to the user, reads summaries, and decides what to dispatch. In the author's experience it currently works best on Gemini: compared with Claude Opus 5.5 it generalizes clearly better to situations the prompt never described, and it proactively does things instead of asking for permission twice. He considers it the best model for a personal agent right now. This is one person's daily-use impression, not a benchmark, and it will change as models change.
+The secretary is the role that talks to the user, reads summaries, and decides what to dispatch. In the author's experience it currently works best on a 1M-context Gemini: compared with Claude Opus 5.5 it generalizes clearly better to situations the prompt never described, and it proactively does things instead of asking for permission twice. He considers it the best model for a personal agent right now. This is one person's daily-use impression, not a benchmark, and it will change as models change.
 
 The other roles are chosen on cost and stability: intake runs on a cheap model with its own fallback chain, separate from the secretary so the two do not break each other's prompt cache; coding work goes to coding agents (Claude Code, Codex, OpenCode, Pi and similar) acting as executors. Every provider sits behind an ordered fallback chain, and a quota error switches to the next provider instead of waiting hours on `Retry-After`. Keep the choice in configuration, not in code.
 

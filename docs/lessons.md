@@ -180,3 +180,30 @@ These are pitfalls, experience, and habits from building and running Sidekick ev
 - **Problem:** Real messages and health data make convenient test fixtures.
 - **What happened:** Nothing leaked, because the rule was kept from day one.
 - **Rule:** Deployment directories, keys, memory, and real health, SMS, or mail content stay out of Git and out of fixtures. Write synthetic fixtures from scratch. Review the diff and history before every push.
+
+## Added from recent practice
+
+### 34. Split models by role: a long-context secretary, coding agents for code
+- **Problem:** One model doing everything is either too expensive for raw data or too weak for judgment, and a chat model writing code inside the conversation is slow and hard to review.
+- **What happened:** The secretary moved through several providers. The author now runs it on a 1M-context Gemini; in his experience it generalizes clearly better than Claude Opus 5.5 to situations the prompt never described and proactively finishes things instead of asking again. This is his daily-use impression, not a benchmark. Code changes were never done by the secretary itself: they are relayed to coding executors (Claude Code, Codex and similar) that work in the repository, test, and commit.
+- **Rule:** Secretary = the strongest generalist you trust with judgment, behind a fallback chain. Intake = a cheap model in its own session. Code = coding agents as executors. Keep every choice in configuration so it can change when models change; a 1M window is a ceiling, not a reason to skip handoff notes and recall.
+
+### 35. Writing memory must not break the prefix cache; consolidate at night
+- **Problem:** The always-on memory file is rendered into the system prefix, and every rewrite of the prefix makes the next request a cache miss on the largest, most expensive part of the context.
+- **What happened:** In Sidekick, the memory tool appends one line per fact and the prefix is re-rendered at session boundaries; when the user saves the memory by hand in the app, the app warns that saving reloads the prefix of the running session and that the next turn misses the cache once. Cleanup is left to a nightly "Dream": the old memory is first archived in full (deduplicated by content hash) into searchable recall, then the secretary consolidates it, then the result is reconciled against current task cards. Missed runs are made up after a restart; only the secretary dreams.
+- **Rule:** Append during the day, rewrite at night. Do not edit long-lived prefix content mid-session; when you must, do it once and accept one cold turn. Archive before rewriting, keep identity, long-term facts, preferences, rules, and open items, and compare-and-swap against memory and task revisions.
+
+### 36. Keep heavy builds off the small main server
+- **Problem:** Android builds on the small-memory server that also runs the agent.
+- **What happened:** A server build took tens of minutes and exhausted memory; the same build on the user's computer took a minute or two. The fix was a small build queue: the computer (which can reach the server; the server cannot reach it) long-polls for jobs, builds the already-pushed commit in a fresh checkout, uploads the artifact with its hash, and the server verifies the hash and re-signs the package with the release key. The computer signs with a throwaway key only, so its builds cannot be installed directly. When the computer is offline or stops heartbeating, the server falls back to a local build that is memory-capped and serialized by a lock. A real compile error is returned as-is instead of being retried on the other machine.
+- **Rule:** The main server runs the agent, not the toolchain. Send heavy builds to a stronger machine, keep signing keys on the server, verify hashes, re-sign before install, and only fall back locally with resource limits.
+
+### 37. Browser automation gets its own profile
+- **Problem:** Automating the user's everyday browser.
+- **What happened:** This is the author's practice rather than a logged incident in the agent repository: sharing a profile between automation and daily browsing lets automation log sites out, rotate or clear cookies, and leave the user's own sessions broken.
+- **Rule:** Launch automated Chrome/Chromium with a dedicated user-data directory and drive it over CDP. Log in there once, on purpose. Never point automation at the user's daily profile, and keep that directory out of Git.
+
+### 38. Operate the phone off-screen, and keep SSH out of the daily path
+- **Problem:** Agent actions on the phone fighting with the user, and daily jobs depending on a shell connection to the phone.
+- **What happened:** Scripts that drive the phone UI take the foreground and leave the user on another screen, so the project rule became "never open the app UI while the user is using the phone". Daily collection was moved onto the phone itself: it uploads over its own authenticated HTTPS channel, and the server-side job no longer calls a phone SSH bridge or adb; the old shell-based collector is kept only for manual backfill. For actions that must open apps, the author's practice is to run them on a virtual display, so a second hop (one app launching another) does not light up the main screen or steal the foreground.
+- **Rule:** Daily business runs on the device and pushes to authenticated ingress. Shell access (SSH, adb) is for maintenance only. UI automation runs on a virtual display, never on the screen the user is holding.
