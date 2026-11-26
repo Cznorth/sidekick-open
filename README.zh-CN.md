@@ -1,6 +1,6 @@
 # Sidekick：能被你改写的 Personal Agent
 
-[English](README.md) · 简体中文 · [设计手册](docs/design.zh-CN.md) · [踩坑与习惯](docs/lessons.zh-CN.md) · [搭建 Skill](skills/sidekick-bootstrap/SKILL.zh-CN.md) · [发布文案](launch/copy.md)
+[English](README.md) · 简体中文 · [设计手册](docs/design.zh-CN.md) · [踩坑与习惯](docs/lessons.zh-CN.md) · [搭建 Skill](skills/sidekick-bootstrap/SKILL.zh-CN.md) · [发布文案](launch/copy.md) · [LINUX DO](https://linux.do)
 
 **入口做统一，权限由个人决定，代码可以一直改。** Sidekick 是以扩展包形式搭在开源 Agent 运行时 [Cortico](https://github.com/Pal-AI-Lab/Cortico) 上的个人 Agent。本仓库公开能迁移的部分：设计、踩过的坑、能跑的核心参考代码，以及一份交给 Coding Agent 用的部署 Skill，帮你搭自己的那一套。它不是原部署的安装包。
 
@@ -76,6 +76,10 @@ npm test
 | `launch/` | 视频分镜、动效源码与发布文案（全是合成素材） |
 
 不包含：私有的设备适配器、安卓伴生 App、Windows 端采集程序、提示词、部署配置和任何个人数据。
+
+## 友情链接
+
+- [LINUX DO](https://linux.do)：感谢 LINUX DO 社区，本项目在这里分享与交流。
 
 ## 贡献与许可
 

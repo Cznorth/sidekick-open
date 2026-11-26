@@ -1,6 +1,6 @@
 # Sidekick: a personal agent you can rewrite
 
-English · [简体中文](README.zh-CN.md) · [Design notes](docs/design.md) · [Lessons](docs/lessons.md) · [Deploy skill](skills/sidekick-bootstrap/SKILL.md) · [Launch copy](launch/copy.md)
+English · [简体中文](README.zh-CN.md) · [Design notes](docs/design.md) · [Lessons](docs/lessons.md) · [Deploy skill](skills/sidekick-bootstrap/SKILL.md) · [Launch copy](launch/copy.md) · [LINUX DO](https://linux.do)
 
 **One front door. Permissions on your terms. Source you can keep changing.** Sidekick is a personal agent built as extension packages on the open-source agent runtime [Cortico](https://github.com/Pal-AI-Lab/Cortico). This repository shares what is portable: the design, the pitfalls we hit, a runnable reference core, and an agent-facing skill that walks you through building your own. It is not an installer for the original deployment.
 
@@ -77,6 +77,10 @@ The synthetic workshop example routes a deduplicated event, pauses and resumes a
 | `launch/` | Video storyboard, motion source and launch copy (synthetic material only) |
 
 Not included: the private device adapters, Android companion app, Windows agent, prompts, deployment config, or any personal data.
+
+## Friend links
+
+- [LINUX DO](https://linux.do): thanks to the LINUX DO community, where this project is shared and discussed.
 
 ## Contributing and license
 
