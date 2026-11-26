@@ -207,3 +207,35 @@ These are pitfalls, experience, and habits from building and running Sidekick ev
 - **Problem:** Agent actions on the phone fighting with the user, and daily jobs depending on a shell connection to the phone.
 - **What happened:** Scripts that drive the phone UI take the foreground and leave the user on another screen, so the project rule became "never open the app UI while the user is using the phone". Daily collection was moved onto the phone itself: it uploads over its own authenticated HTTPS channel, and the server-side job no longer calls a phone SSH bridge or adb; the old shell-based collector is kept only for manual backfill. For actions that must open apps, the author's practice is to run them on a virtual display, so a second hop (one app launching another) does not light up the main screen or steal the foreground.
 - **Rule:** Daily business runs on the device and pushes to authenticated ingress. Shell access (SSH, adb) is for maintenance only. UI automation runs on a virtual display, never on the screen the user is holding.
+
+## Supervision, model switching, frontend, and operations
+
+### 39. Two layers against dropped requests: a side-channel supervisor and a periodic sweep
+- **Problem:** The secretary sometimes says "I'll do it" and then never calls a tool, or answers only the last of several messages that arrived together. Nothing errors, so nothing notices.
+- **What happened:** Prompt rules alone did not stop it. Two layers were added. (1) An asynchronous side-channel supervisor: after the main loop goes quiet, a lightweight, cheap model (an open-weight ~30B model is enough) reads the user's original words, the secretary's reply, and a short summary of the tools that actually ran, and checks two things only: a promise without a matching action, and messages that were never answered. If it finds a gap it injects one `[system]` follow-up into the secretary's session, at most once per user turn so the two cannot loop. It never talks to the user and never edits anything. (2) A daily/weekly full sweep re-reads the whole conversation for the period and compares it with the task ledger, catching what the per-turn check missed.
+- **Rule:** Check deeds against words with a separate, cheap model, off the hot path, after the turn settles. The supervisor only nudges, once; the secretary still decides. Back it with a scheduled full-history sweep against the ledger.
+
+### 40. Switching models must take effect immediately
+- **Problem:** The current endpoint hangs without producing a token, and the user switches to another model in settings, but the change only applies to the next request.
+- **What happened:** The stuck request kept waiting until its own deadline, then sat in a backoff/retry schedule, and the failed turn stayed failed. The error banner in the web UI was also cleared by the next status refresh, so the user could not see why nothing happened.
+- **Rule:** On a manual model switch: abort in-flight requests that have produced no output yet, skip the pending backoff, and re-wake the turn that already failed so it runs on the new model. Errors stay visible in the frontend until the user dismisses them or a later success replaces them; periodic refreshes must not wipe them.
+
+### 41. Frontend latency and reliability details that users notice
+- **Problem:** Measured time-to-first-token looked slow for reasoning models, switching conversations flashed a blank page, and button actions were lost when the connection dropped.
+- **What happened:** TTFT was counted from the first visible answer token, so long thinking looked like a stall. Switching conversations re-fetched and re-rendered everything from scratch. Buttons on cards (approve, choose, retry) sent a one-shot request that vanished if the socket was down at that moment.
+- **Rule:** Count TTFT from the first token of any kind, including reasoning and the start of a tool call. Keep a per-conversation view cache and apply incremental updates on switch instead of a blank reload; persist input drafts per conversation. Route button actions through the same reliable outbox as messages (persisted, retried with an idempotency key, sent after reconnect).
+
+### 42. Reverse SSH tunnels: one port per purpose
+- **Problem:** Several services were multiplexed through one reverse SSH forwarded port.
+- **What happened:** When that tunnel dropped or had to be restarted for one service, the others went down with it, and it was hard to tell which consumer was failing.
+- **Rule:** Give each purpose its own reverse-forwarded port (and ideally its own supervised tunnel process with keepalives and auto-restart), so they fail and restart independently. Bind forwarded ports to loopback on the server unless they must be public. Daily traffic should still prefer authenticated HTTPS over tunnels (lessons #38).
+
+### 43. Rotate access logs before they fill the disk
+- **Problem:** Reverse-proxy and app access logs on a small server.
+- **What happened:** High-frequency polling (long-poll connectors, device uploads, health checks) made the access logs grow without limit until the disk was nearly full, which then broke unrelated writes.
+- **Rule:** Configure log rotation with size and count limits for every access log from day one, compress old files, and sample or skip logging for health and long-poll endpoints. Alert on free disk space, not only on process health.
+
+### 44. Clear the Termux environment before calling system binaries
+- **Problem:** Scripts started from Termux on Android calling system tools (or Termux tools calling into the system).
+- **What happened:** Termux sets `LD_LIBRARY_PATH` (and related variables) to its own prefix. System binaries launched from that environment loaded the wrong libraries and crashed or behaved strangely, while the same command worked from a clean shell.
+- **Rule:** When crossing between Termux and system binaries, launch with a cleaned environment (unset `LD_LIBRARY_PATH` and `LD_PRELOAD`, or use `env -i` with an explicit `PATH`). Do this in the launcher script, not by hand.

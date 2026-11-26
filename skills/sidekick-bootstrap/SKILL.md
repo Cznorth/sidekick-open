@@ -95,6 +95,7 @@ Checkpoint: a synthetic item posted with `curl` (correct token) appears as an ev
 3. **Executors** = coding agents. Build a dispatch World with a small connector per executor machine that long-polls for jobs (no inbound ports on the executor machine). Dispatch carries the **user's original words** attached by code; optional quotes must be verified as contiguous spans of the original; any paraphrase is attached alongside and marked "the original wins" (lessons #16).
 4. **Task ledger** in code (see `core/tasks.mjs`): `pending -> dispatched -> running`, `waiting` (question or quota, resumable), `review` (delivered), `done` only after acceptance; attempts and sequence numbers; reconcile after restart; stalled-session detection.
 5. **Fast reply** (optional, later): a bounded read-only branch for questions while the main loop is busy (`core/fast-reply.mjs`).
+6. **Side-channel supervisor** (recommended once the secretary runs daily): after a turn goes quiet, a cheap separate model reads the user's original words, the secretary's reply, and a summary of the tools that ran, and looks only for "promised but did nothing" and "messages left unanswered". On a gap it injects one `[system]` follow-up into the secretary's session, at most once per user turn (no loops); it never talks to the user. Add a daily/weekly full-conversation sweep against the task ledger as the second layer (lessons #39).
 
 Checkpoint: a request typed in chat becomes a task, reaches an executor with the original text, comes back as `review`, and only becomes `done` when the user accepts.
 
@@ -112,6 +113,7 @@ Checkpoint: a small, harmless change requested in chat is implemented, tested, c
 - **Intake and other members:** a cheaper model with its own fallback chain.
 - **Coding:** do not make the secretary write code. Coding goes to coding agents (Claude Code, Codex, and similar) as executors, on whatever subscriptions the user has (lessons #34).
 - **Fallback chains:** ordered list per endpoint; fail fast on "insufficient quota" or long `Retry-After`; persist cooldowns; no fallback after streaming started, on context overflow, or on cancellation (lessons #22). Do not copy one-time-refresh login files between machines (lessons #23).
+- **Manual switch takes effect now:** when the user switches model, abort in-flight requests that have produced no output, skip pending backoff, and re-wake the turn that already failed. Keep the error visible in the UI until dismissed or replaced by a success (lessons #40).
 - Ask before adding any new paid model.
 
 Checkpoint: kill the primary endpoint (wrong key in a test deployment); the turn completes on the fallback; restoring the key switches back.
@@ -135,6 +137,9 @@ These are not provided; build them only if the user wants them, and only after t
 - **Browser automation:** give automated Chrome/Chromium its own CDP user-data directory, never the user's everyday profile, so automation cannot invalidate their cookies and logins (lessons #37).
 - **PC agent:** a small background program that pushes foreground-window/presence items to a pc World and long-polls for jobs. Start read-only. Any "operate my computer" tool needs explicit approval and a visible log. On Windows, delete non-ASCII paths with `fs.unlinkSync`, not `fs.rmSync` (lessons #27).
 
+- **Chat frontend:** count TTFT from the first token of any kind (reasoning, tool-call start); cache each conversation view and update it incrementally on switch (no blank reload); send button actions through the same persisted, idempotent outbox as messages (lessons #41).
+- **Operations:** one reverse SSH forwarded port per purpose, loopback-bound, supervised (lessons #42); size/count-limited rotation for every access log and a free-disk alert (lessons #43); on Android/Termux, launch system binaries with `LD_LIBRARY_PATH`/`LD_PRELOAD` cleared (lessons #44).
+
 ## Phase 9 - Verification checklist
 
 - [ ] `pnpm test` / `pnpm check:extension` pass for every package.
@@ -146,6 +151,8 @@ These are not provided; build them only if the user wants them, and only after t
 - [ ] A dispatched task carries the original words; delivery goes to `review`, not `done`; quota pause is `waiting`.
 - [ ] Fallback chain verified by breaking the primary in a test deployment.
 - [ ] Self-update drill done, including one rollback.
+- [ ] Supervisor drill: a turn that promises without acting gets exactly one `[system]` follow-up; switching model during a hung request recovers the turn.
+- [ ] Access logs rotate with limits; disk-space alert exists.
 - [ ] `git log -p` and the working tree contain no tokens, `.env`, personal data, real hostnames or IPs.
 - [ ] A self-manual exists and matches current settings and permissions.
 
