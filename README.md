@@ -6,6 +6,29 @@ English · [简体中文](README.zh-CN.md) · [Design notes](docs/design.md) · 
 
 General-purpose assistants are useful out of the box. Personal workflows, however, span devices, OS permissions, and private context. A platform cannot assume broad access or build the last mile for every user. Sidekick's bet is a small agent loop, replaceable Worlds for data and tools, and source-level customization with a capable coding model. Reviewable changes, tests, and rollback still matter; self-evolution is not an excuse for unreviewed deployment.
 
+## Quick Start
+
+Paste this into Claude Code, Codex, OpenCode, Pi, or any coding agent, in an empty working directory:
+
+```text
+Clone https://github.com/Cznorth/sidekick-open, read AGENTS.md and skills/sidekick-bootstrap/SKILL.md,
+then follow the skill phase by phase to build my own Sidekick-style personal agent on Cortico.
+Interview me first, ask before any permission, key, login, open port or write-capable tool,
+and stop at each checkpoint for my review.
+```
+
+The agent clones the repo, runs the reference core, sets up [Cortico](https://github.com/Pal-AI-Lab/Cortico), and builds your own bot and first read-only World with tests, stopping at each checkpoint. A longer version that spells out phases 0 to 3 and the safety rules is in [`PROMPT.md`](skills/sidekick-bootstrap/PROMPT.md) (English and Chinese).
+
+**Install as a skill** so the agent picks it up whenever you say "set up Sidekick":
+
+```sh
+git clone https://github.com/Cznorth/sidekick-open
+# Claude Code: user-level (or .claude/skills/ inside a project)
+cp -r sidekick-open/skills/sidekick-bootstrap ~/.claude/skills/
+```
+
+Then tell Claude Code: `Use the sidekick-bootstrap skill to build my own personal agent.` Codex and other agents find the skill through [`AGENTS.md`](AGENTS.md) when started inside the cloned repo. Read [docs/lessons.md](docs/lessons.md) (44 pitfalls) before you wire real devices.
+
 ![Worlds route external events, the main Agent owns its context, quick answers run read-only, and executors report through a task ledger](docs/architecture.svg)
 
 | Problem | Design |
@@ -33,7 +56,7 @@ coding executors (Claude Code, Codex, OpenCode, Pi, ...): edit, test, commit, de
 
 ## Run the reference core
 
-Use Node.js 22 or later. No dependencies, network access, or model keys are needed:
+You do not need this to build your own; the bootstrap prompt runs it first. To try it yourself, use Node.js 22 or later. No dependencies, network access, or model keys are needed:
 
 ```sh
 npm run demo
@@ -41,10 +64,6 @@ npm test
 ```
 
 The synthetic workshop example routes a deduplicated event, pauses and resumes a task after a quota limit, reviews the result, answers a read-only question, and archives old notes before consolidation. The reference core re-expresses the design without copying deployment code. It does not include device adapters, real data, a model gateway, or durable storage. The [design notes](docs/design.md) distinguish the original system from the example.
-
-## Build your own
-
-Hand [`skills/sidekick-bootstrap/SKILL.md`](skills/sidekick-bootstrap/SKILL.md) to a coding agent (Claude Code picks it up as a skill; Codex and others find it through [`AGENTS.md`](AGENTS.md)). It guides you from zero to your own Sidekick-style agent on Cortico: what already exists, what you must build, the order to build it in, verification, and safety rules. Or paste the starter prompt in [`PROMPT.md`](skills/sidekick-bootstrap/PROMPT.md) into your own agent. Read [docs/lessons.md](docs/lessons.md) before you wire real devices.
 
 ## What is in this repository
 

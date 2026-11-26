@@ -6,6 +6,28 @@
 
 通用助手擅长提供开箱即用的体验。但真正贴身的工作常跨设备、系统权限和私人上下文；平台不能默认获得这些权限，也很难替每个人定制到底。我们的取舍是让事件循环尽可能小，把数据接入和工具放到可替换的 World 里，再用强 Coding 模型维护属于自己的那一层源码。能改源码不等于允许模型随意上生产：变更仍要可审阅、可测试、可回退。
 
+## 快速开始
+
+在一个空的工作目录里，把下面这段粘给 Claude Code、Codex、OpenCode、Pi 或任意 Coding Agent：
+
+```text
+克隆 https://github.com/Cznorth/sidekick-open ，读 AGENTS.md 和 skills/sidekick-bootstrap/SKILL.md（中文对照 SKILL.zh-CN.md），
+然后按这个 Skill 一个阶段一个阶段，在 Cortico 上帮我搭我自己的 Sidekick 式个人 Agent。
+先访谈我；授予任何权限、密钥、登录、开放端口或写工具前先问我；每个检查点停下来让我确认。用中文和我沟通。
+```
+
+Agent 会克隆仓库、跑通参考核心、装好 [Cortico](https://github.com/Pal-AI-Lab/Cortico)，再写出你自己的 bot 和第一个只读 World 并配测试，每个检查点停下来等你确认。把阶段 0–3 和安全规矩写全的长版本见 [`PROMPT.md`](skills/sidekick-bootstrap/PROMPT.md)（中英双语）。
+
+**装成 Skill**，以后说一句「帮我搭 Sidekick」Agent 就会自动加载：
+
+```sh
+git clone https://github.com/Cznorth/sidekick-open
+# Claude Code：用户级（或放到项目里的 .claude/skills/）
+cp -r sidekick-open/skills/sidekick-bootstrap ~/.claude/skills/
+```
+
+然后对 Claude Code 说：`用 sidekick-bootstrap skill 帮我搭我自己的个人 Agent。` Codex 等在克隆下来的仓库里启动时，会经 [`AGENTS.md`](AGENTS.md) 找到这个 Skill。接真设备之前先读 [踩坑与习惯](docs/lessons.zh-CN.md)（44 条）。
+
 ![架构：World 分发带信任标记的事件，主 Agent 结合记忆工作，快答走只读支路，执行器通过任务账本回报](docs/architecture.svg)
 
 | 断点 | 设计选择 |
@@ -31,9 +53,9 @@ Coding 执行器（Claude Code、Codex、OpenCode、Pi 等）：改代码、测�
 
 **模型选择（作者个人经验，不是评测结论）。** 秘书现在用 1M 上下文的 Gemini。作者日常使用下来，Gemini 在这个角色上的泛化能力明显好于 Claude Opus 5.5，而且会主动把事办了，不用催第二遍；他认为它是目前做个人 Agent 最合适的模型。收发室用更便宜的模型并配回退链；重的代码活交给 Coding Agent 当执行器。每个人的体验会不同，provider 要保持可替换。
 
-## 跑一遍
+## 跑一遍参考核心
 
-需要 Node.js 22 或以上。无需安装依赖、联网或填模型密钥：
+自己搭不需要先跑这一步，引导 Prompt 会让 Agent 先跑一遍。想自己试试的话，需要 Node.js 22 或以上。无需安装依赖、联网或填模型密钥：
 
 ```sh
 npm run demo
@@ -41,10 +63,6 @@ npm test
 ```
 
 演示使用合成的工作坊任务：事件去重 → 执行器遇到限额暂停 → 恢复并提交成果 → 验收 → 忙时只读查询 → 归档整理。`core/` 是依据内部设计重新编写的参考实现：**没有原适配器、部署配置、私人数据、模型调用或持久化服务**。原系统行为与示例取舍的差别见[设计手册](docs/design.zh-CN.md)。
-
-## 搭你自己的
-
-把 [`skills/sidekick-bootstrap/SKILL.md`](skills/sidekick-bootstrap/SKILL.md) 交给一个 Coding Agent（Claude Code 会当作 Skill 加载；Codex 等经 [`AGENTS.md`](AGENTS.md) 找到它）。它会带你从零在 Cortico 上搭出自己的 Sidekick 式 Agent：哪些已经有、哪些要自己写、按什么顺序写、怎么验收、有哪些安全规矩。也可以直接把 [`PROMPT.md`](skills/sidekick-bootstrap/PROMPT.md) 里的引导 Prompt 粘给你自己的 Agent。接真设备之前先读 [踩坑与习惯](docs/lessons.zh-CN.md)。
 
 ## 仓库里有什么
 
